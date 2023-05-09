@@ -1,0 +1,56 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const app = express();
+
+app.use(bodyParser.json());
+
+mongoose.connect('mongodb://localhost/fieldnotes', { useNewUrlParser: true })
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Error connecting to MongoDB:', err));
+
+const fieldnoteSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    },
+    body: {
+        type: String,
+        required: true
+    },
+    location: {
+        type: String,
+        required: true
+    },
+    tags: [String]
+});
+
+const Fieldnote = mongoose.model('Fieldnote', fieldnoteSchema);
+
+app.get('/', (req, res) => {
+    res.send('Welcome to the Fieldnotes API!');
+});
+
+app.get('/fieldnotes', async (req, res) => {
+    const fieldnotes = await Fieldnote.find();
+    res.json(fieldnotes);
+});
+
+app.post('/fieldnotes', async (req, res) => {
+    const fieldnote = new Fieldnote({
+        title: req.body.title,
+        body: req.body.body,
+        location: req.body.location,
+        tags: req.body.tags
+    });
+    await fieldnote.save();
+    res.json(fieldnote);
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Listening on port ${port}...`));
